@@ -19,10 +19,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import com.example.movieappmad24.models.getMovies
+import com.example.movieappmad24.viewmodels.MoviesViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WatchlistScreen(navController: NavController) {
+fun WatchlistScreen(
+    navController: NavController,
+    moviesViewModel: MoviesViewModel
+    ) {
     Scaffold (
         topBar = {
             CenterAlignedTopAppBar(
@@ -66,8 +70,9 @@ fun WatchlistScreen(navController: NavController) {
     ){ innerPadding ->
         MovieList(
             modifier = Modifier.padding(innerPadding),
-            movies = getMovies(),
-            navController = navController
+            movies =  moviesViewModel.favoriteMovies,
+            navController = navController,
+            viewModel = moviesViewModel
         )
     }
 }

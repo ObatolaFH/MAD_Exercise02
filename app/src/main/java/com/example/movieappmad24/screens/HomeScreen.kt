@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -50,16 +51,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.example.movieappmad24.models.Movie
 import com.example.movieappmad24.models.getMovies
 import com.example.movieappmad24.navigation.Screen
+import com.example.movieappmad24.viewmodels.MoviesViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(
+    navController: NavController,
+    moviesViewModel: MoviesViewModel
+) {
     Scaffold (
         topBar = {
             CenterAlignedTopAppBar(
@@ -95,8 +101,9 @@ fun HomeScreen(navController: NavController) {
     ){ innerPadding ->
         MovieList(
             modifier = Modifier.padding(innerPadding),
-            movies = getMovies(),
-            navController = navController
+            navController = navController,
+            viewModel = moviesViewModel,
+            movies = moviesViewModel.movies
         )
     }
 }
@@ -105,14 +112,22 @@ fun HomeScreen(navController: NavController) {
 @Composable
 fun MovieList(
     modifier: Modifier,
-    movies: List<Movie> = getMovies(),
-    navController: NavController
+    navController: NavController,
+    viewModel: MoviesViewModel,
+    movies: List<Movie> = viewModel.movies
+
 ){
     LazyColumn(modifier = modifier) {
         items(movies) { movie ->
-            MovieRow(movie = movie){ movieId ->
-                navController.navigate("detailscreen/$movieId")
-            }
+            MovieRow(
+                movie = movie,
+                onFavoriteClick = {movieId ->
+                    viewModel.toggleFavoriteMovie(movieId)
+                },
+                onItemClick = {movieId ->
+                    navController.navigate("detailscreen/$movieId")
+                }
+            )
         }
     }
 }
@@ -120,6 +135,7 @@ fun MovieList(
 @Composable
 fun MovieRow(
     movie: Movie,
+    onFavoriteClick: (String) -> Unit = {},
     onItemClick: (String) -> Unit = {}
 ){
     Card(modifier = Modifier
@@ -133,7 +149,11 @@ fun MovieRow(
     ) {
         Column {
 
-            MovieCardHeader(imageUrl = movie.images[0])
+            MovieCardHeader(
+                imageUrl = movie.images[0],
+                isFavorite = movie.isFavorite,
+                onFavoriteClick = {onFavoriteClick(movie.id)}
+            )
 
             MovieDetails(modifier = Modifier.padding(12.dp), movie = movie)
 
@@ -142,7 +162,11 @@ fun MovieRow(
 }
 
 @Composable
-fun MovieCardHeader(imageUrl: String) {
+fun MovieCardHeader(
+    imageUrl: String,
+    isFavorite: Boolean = false,
+    onFavoriteClick:() -> Unit = {}
+) {
     Box(
         modifier = Modifier
             .height(150.dp)
@@ -152,7 +176,7 @@ fun MovieCardHeader(imageUrl: String) {
 
         MovieImage(imageUrl)
 
-        FavoriteIcon()
+        FavoriteIcon(isFavorite = isFavorite, onFavoriteClick)
     }
 }
 
@@ -172,7 +196,10 @@ fun MovieImage(imageUrl: String){
 }
 
 @Composable
-fun FavoriteIcon() {
+fun FavoriteIcon(
+    isFavorite: Boolean,
+    onFavoriteClick: () -> Unit = {}
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -180,8 +207,16 @@ fun FavoriteIcon() {
         contentAlignment = Alignment.TopEnd
     ){
         Icon(
+            modifier = Modifier.clickable{
+                onFavoriteClick() },
             tint = MaterialTheme.colorScheme.secondary,
-            imageVector = Icons.Default.FavoriteBorder,
+            imageVector =
+            if(isFavorite){
+               Icons.Filled.Favorite
+               }else{
+               Icons.Default.FavoriteBorder
+               },
+
             contentDescription = "Add to favorites")
     }
 }
